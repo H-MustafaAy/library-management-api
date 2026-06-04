@@ -4,6 +4,7 @@ import com.mustafaay.library_management_api.enums.LoanStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
@@ -48,6 +49,15 @@ public class Loan {
     @Column(nullable = false)
     private LoanStatus status;
 
+
+    //toplama ceza miktarı
+    @Column(nullable = false)
+    private BigDecimal fineAmount = BigDecimal.ZERO;
+
+    //ceza ödendi mi varsayılan true kitap aldığında borç olmaz
+    @Column(nullable = false)
+    private Boolean finePaid = true;
+
     @PrePersist
     public void prePersist() {
         if (loanDate == null) {
@@ -61,6 +71,14 @@ public class Loan {
 
         if (status == null) {
             status = LoanStatus.BORROWED;
+        }
+
+        if (fineAmount == null) {
+            fineAmount = BigDecimal.ZERO;
+        }
+
+        if (finePaid == null) {
+            finePaid = true;
         }
     }
 }

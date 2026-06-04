@@ -23,11 +23,15 @@ public class LoanMapper {
                 .memberFullName(loan.getMember().getFirstName()+ " "+ loan.getMember().getLastName())
                 .memberEmail(loan.getMember().getEmail())
 
+
                 //ödünç bilgileri
                 .loanDate(loan.getLoanDate())
                 .dueDate(loan.getDueDate())
                 .returnDate(loan.getReturnDate())
                 .status(loan.getStatus())
+                .fineAmount(loan.getFineAmount())
+                .finePaid(loan.getFinePaid())
+
 
                 .build();
     }

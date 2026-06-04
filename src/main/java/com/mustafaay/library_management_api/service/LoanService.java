@@ -17,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -30,26 +32,56 @@ public class LoanService {
     private final MemberRepository memberRepository;
     private final LoanMapper loanMapper;
 
-    @Transactional
-    public LoanResponse createLoan(CreateLoanRequest request){
+    private static final BigDecimal DAILY_FINE_AMOUNT = BigDecimal.valueOf(2);
+    private static final int MAX_ACTIVE_LOAN_COUNT = 3;
 
-        //kitap var mı
-        Book book = bookRepository.findById(request.getBookId())
-                .orElseThrow(() -> new ResourceNotFoundException("Kitap bulunamadı."));
+    @Transactional
+    public LoanResponse createLoan(CreateLoanRequest request){ //bookid , memberid
+
+        Long memberId = request.getMemberId();
+        Long bookId = request.getBookId();
+        LocalDate todayDate = LocalDate.now();
+
         //üye var mı
-        Member member = memberRepository.findById(request.getMemberId())
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Üye bulunamadı."));
 
         //üye aktif mi
-
         if(member.getStatus() != MemberStatus.ACTIVE){
             throw new BadRequestException("Üye pasif durumda - pasif üyeler kitap ödünç alamaz");
         }
+        //teslim tarihi geçmiş kitabı olan üye yeni kitap alamaz
+        if(loanRepository.existsByMemberIdAndReturnDateIsNullAndDueDateBefore(memberId,todayDate)){
+            throw new BadRequestException("Teslim tarihi geçmiş kitabı olan üye yeni kitap alamaz - Önce kitabı iade etmeli.");
+        }
+        //ödenmemiş cezası olan üye kitap alamaz.
+            if(loanRepository.existsByMemberIdAndFineAmountGreaterThanAndFinePaidFalse(memberId,BigDecimal.ZERO)){
+                throw new BadRequestException("Üyenin ödenmemiş cezası var. Ceza ödenmeden yeni kitap alınamaz.");
+            }
+
+        //bir üye aynı anda en fazla 3 kitap ödünç alabilir
+        if(loanRepository.countByMemberIdAndReturnDateIsNull(memberId)>=MAX_ACTIVE_LOAN_COUNT){
+            throw new BadRequestException("Bir üye aynı anda en fazla 3 kitap ödünç alabilir.");
+
+        }
+        //Üye elinde zaten olan aynı kitabı tekrar alamaz.
+        if(loanRepository.existsByMemberIdAndBookIdAndReturnDateIsNull(memberId, bookId)){
+            throw new BadRequestException("Bu kitap şuan üyede mevcut");
+        }
+
+
+        //kitap var mı
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kitap bulunamadı."));
 
         // kitap rafta var mı kontrol ediliyor
         if(book.getAvailableCopies()<=0){
             throw new BadRequestException("Bu kitabın ödünç verilebilir kopyası yok");
         }
+
+
+
+
 
         //loan nesnesini oluşturma
         Loan loan = Loan.builder()
@@ -169,11 +201,24 @@ public class LoanService {
         //kitabı al
         Book book = loan.getBook();
 
+        LocalDate returnDate = LocalDate.now();
+
         //iade tarihini bugünün tarihi yap
-        loan.setReturnDate(LocalDate.now());
+        loan.setReturnDate(returnDate);
 
         //ödünç durumunu returned yaptım
         loan.setStatus(LoanStatus.RETURNED);
+
+         // ceza hesaplanıyor
+        BigDecimal fineAmount = calculateFine(loan.getDueDate(), returnDate);
+
+        loan.setFineAmount(fineAmount);
+
+        if (fineAmount.compareTo(BigDecimal.ZERO) > 0) {
+            loan.setFinePaid(false);
+        } else {
+            loan.setFinePaid(true);
+        }
 
         //kitap geriye döndüğü için müsait kopya sayısını 1 arttırdım
         book.setAvailableCopies(book.getAvailableCopies()+1);
@@ -194,4 +239,39 @@ public class LoanService {
         }
         loanRepository.delete(loan);
     }
+
+    //ceza hesaplama metodu
+    private BigDecimal calculateFine(LocalDate dueDate, LocalDate returnDate) {
+
+        if (!returnDate.isAfter(dueDate)) {
+            return BigDecimal.ZERO;
+        }
+
+        long lateDays = ChronoUnit.DAYS.between(dueDate, returnDate);
+
+        return DAILY_FINE_AMOUNT.multiply(BigDecimal.valueOf(lateDays));
+    }
+
+    //ceza ödemek için
+    @Transactional
+    public LoanResponse payFine(Long id) {
+
+        Loan loan = loanRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ödünç kaydı bulunamadı."));
+
+        if (loan.getFineAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Bu ödünç kaydına ait ceza bulunmamaktadır.");
+        }
+
+        if (loan.getFinePaid()) {
+            throw new BadRequestException("Bu ceza zaten ödenmiş.");
+        }
+
+        loan.setFinePaid(true);
+
+        Loan updatedLoan = loanRepository.save(loan);
+
+        return loanMapper.toResponse(updatedLoan);
+    }
 }
+

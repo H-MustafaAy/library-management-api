@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Getter
@@ -31,6 +32,9 @@ public class LoanResponse {
     private LocalDate returnDate;
 
     private LoanStatus status;
+
+    private BigDecimal fineAmount;
+    private Boolean finePaid;
 }
 
 

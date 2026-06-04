@@ -9,6 +9,7 @@ import com.mustafaay.library_management_api.entity.Category;
 import com.mustafaay.library_management_api.repository.AuthorRepository;
 import com.mustafaay.library_management_api.repository.BookRepository;
 import com.mustafaay.library_management_api.repository.CategoryRepository;
+import com.mustafaay.library_management_api.repository.LoanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.mustafaay.library_management_api.exception.BadRequestException;
@@ -24,45 +25,54 @@ public class BookService {
     private final BookRepository bookRepository;
     private final CategoryRepository categoryRepository;
     private final AuthorRepository authorRepository;
+    private final LoanRepository loanRepository;
 
     public BookService(BookRepository bookRepository,
                        CategoryRepository categoryRepository,
-                       AuthorRepository authorRepository) {
+                       AuthorRepository authorRepository, LoanRepository loanRepository) {
         this.bookRepository = bookRepository;
         this.categoryRepository = categoryRepository;
         this.authorRepository = authorRepository;
+        this.loanRepository = loanRepository;
     }
 
     @Transactional
     public BookResponse createBook(CreateBookRequest request) {
+        String isbn = request.getIsbn();
+        Integer availableCopies = request.getAvailableCopies();
+        Integer totalCopies = request.getTotalCopies();
+        Long categoryId = request.getCategoryId();
+        Set<Long> authorIds = request.getAuthorIds();
+        String title = request.getTitle();
+        Integer publicationYear = request.getPublicationYear();
 
         //aynı isbn ye sahip iki kitap olamaz primery key
-        if (bookRepository.existsByIsbn(request.getIsbn())) {
+        if (bookRepository.existsByIsbn(isbn)) {
             throw new BadRequestException("Bu isbn numarasına sahip kitap mevcut!");
         }
         //mevcut kopya sayısı toplam kopya sayısından fazla olamaz
-        if (request.getAvailableCopies() > request.getTotalCopies()) {
+        if (availableCopies > totalCopies) {
             throw new BadRequestException("Mevcut kopya sayısı toplam kopya sayısından fazla olamaz!");
         }
 
         //gelen category id ile kategori bulunur.
-        Category category = categoryRepository.findById(request.getCategoryId())
+        Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadı"));
 
 
         // gelen authorIds listesindeki  ıd lere  göre yazarlar  bulunur.
-        Set<Author> authors = request.getAuthorIds()
+        Set<Author> authors = authorIds
                 .stream()
                 .map(authorId -> authorRepository.findById(authorId)
                         .orElseThrow(() -> new ResourceNotFoundException("Yazar bulunamadı. Id :" + authorId)))
                 .collect(Collectors.toSet());
 
         Book book = Book.builder()
-                .isbn(request.getIsbn())
-                .title(request.getTitle())
-                .publicationYear(request.getPublicationYear())
-                .totalCopies(request.getTotalCopies())
-                .availableCopies(request.getAvailableCopies())
+                .isbn(isbn)
+                .title(title)
+                .publicationYear(publicationYear)
+                .totalCopies(totalCopies)
+                .availableCopies(availableCopies)
                 .category(category)
                 .authors(authors)
                 .build();
@@ -116,36 +126,44 @@ public class BookService {
     // kitap güncellemek için.
     @Transactional
     public BookResponse updateBook(Long id , UpdateBookRequest request){
+        String isbn = request.getIsbn();
+        Integer availableCopies = request.getAvailableCopies();
+        Integer totalCopies = request.getTotalCopies();
+        Long categoryId = request.getCategoryId();
+        Set<Long> authorIds = request.getAuthorIds();
+        String title = request.getTitle();
+        Integer publicationYear = request.getPublicationYear();
+
         //parametreden gelen id numarasına sahip kitap var mı kontrol ediliyor
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Kitap bulunamadı. ID: " + id));
 
         // Eğer isbn değiştiriliyorsa yeni isbn başka bir kitaba ait mi kontrol ediliyor
-        if (!book.getIsbn().equals(request.getIsbn()) &&
-                bookRepository.existsByIsbn(request.getIsbn())) {
+        if (!book.getIsbn().equals(isbn) &&
+                bookRepository.existsByIsbn(isbn)) {
             throw new BadRequestException("Bu ISBN numarasına sahip başka bir kitap zaten mevcut.");
         }
 
         // mevcut kopya sayısı toplam kopyadan fazla olamaz
-        if (request.getAvailableCopies() > request.getTotalCopies()) {
+        if (availableCopies > totalCopies) {
             throw new BadRequestException("Mevcut kopya sayısı toplam kopya sayısından fazla olamaz.");
         }
         // kategorisi var mı
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadı. ID: " + request.getCategoryId()));
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Kategori bulunamadı. ID: " + categoryId));
         // yazarlar  var mı
-        Set<Author> authors = request.getAuthorIds()
+        Set<Author> authors = authorIds
                 .stream()
                 .map(authorId -> authorRepository.findById(authorId)
                         .orElseThrow(() -> new ResourceNotFoundException("Yazar bulunamadı. ID: " + authorId)))
                 .collect(Collectors.toSet());
 
         // mevcut kitap nesnesini güncelliyor
-        book.setIsbn(request.getIsbn());
-        book.setTitle(request.getTitle());
-        book.setPublicationYear(request.getPublicationYear());
-        book.setTotalCopies(request.getTotalCopies());
-        book.setAvailableCopies(request.getAvailableCopies());
+        book.setIsbn(isbn);
+        book.setTitle(title);
+        book.setPublicationYear(publicationYear);
+        book.setTotalCopies(totalCopies);
+        book.setAvailableCopies(availableCopies);
         book.setCategory(category);
         book.setAuthors(authors);
 
@@ -161,7 +179,13 @@ public class BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Kitap bulunamadı. ID: " + id));
 
-        // sitabı siliyoruz
+        //ödünçte kopyası olan kitapların silinmesinin engellenmesi için
+        if(loanRepository.existsByBookIdAndReturnDateIsNull(id)) {
+            throw new BadRequestException("Bu kitabın ödünçte kopyası var- SİLİNEMEZ");
+
+        }
+
+        // kitabı siliyoruz
         bookRepository.delete(book);
     }
    // isbn numarası ile listleme için

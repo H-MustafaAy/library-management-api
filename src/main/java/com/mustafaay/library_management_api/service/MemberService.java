@@ -9,6 +9,7 @@ import com.mustafaay.library_management_api.enums.MemberStatus;
 import com.mustafaay.library_management_api.exception.BadRequestException;
 import com.mustafaay.library_management_api.exception.ResourceNotFoundException;
 import com.mustafaay.library_management_api.mapper.MemberMapper;
+import com.mustafaay.library_management_api.repository.LoanRepository;
 import com.mustafaay.library_management_api.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final MemberMapper memberMapper;
+    private final LoanRepository loanRepository;
 
     public MemberResponse createMember(CreateMemberRequest request) {
 
@@ -43,13 +45,14 @@ public class MemberService {
 
     //TÜM ÜYELERİ LİSTELEME
     @Transactional(readOnly = true)
-    public List<MemberResponse> getAllMembers(){
+    public List<MemberResponse> getAllMembers() {
         List<MemberResponse> allMembers = memberRepository.findAll()
                 .stream()
                 .map(memberMapper::toResponse)
                 .toList();
         return allMembers;
     }
+
     //ÜYE NUMARASINA GÖRE ÜYE LİSTELEME
     @Transactional(readOnly = true)
     public MemberResponse getMemberById(Long id) {
@@ -68,6 +71,7 @@ public class MemberService {
 
         return memberMapper.toResponse(member);
     }
+
     //AD VEYA SOYADA GÖRE ÜYE LİSTELEME
     @Transactional(readOnly = true)
     public List<MemberResponse> searchMembers(String keyword) {
@@ -130,6 +134,11 @@ public class MemberService {
     @Transactional
     public void deleteMember(Long id) {
         Member member = findMemberById(id);
+
+        // burada silinmek istenen üyenin iade etmediği kitap var mı diye kontrol yaptım
+        if (loanRepository.existsByMemberIdAndReturnDateIsNull(id)) {
+            throw new BadRequestException("İade edilmemiş kitabı bulunan üye silinemez!");
+        }
 
         memberRepository.delete(member);
     }

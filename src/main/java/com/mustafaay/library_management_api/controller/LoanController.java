@@ -6,6 +6,7 @@ import com.mustafaay.library_management_api.enums.LoanStatus;
 import com.mustafaay.library_management_api.service.LoanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -79,5 +80,13 @@ public class LoanController {
     @DeleteMapping("/{id}")
     public void deleteLoan(@PathVariable Long id) {
         loanService.deleteLoan(id);
+    }
+    //ceza ödemek için
+    @PatchMapping("/{id}/pay-fine")
+    public ResponseEntity<LoanResponse> payFine(@PathVariable Long id) {
+
+        LoanResponse response = loanService.payFine(id);
+
+        return ResponseEntity.ok(response);
     }
 }

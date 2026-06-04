@@ -397,15 +397,45 @@ Swagger dokümantasyonunu ekle
 
 ---
 
-## Sonraki Geliştirme Adımları
+## Yapılanlar
 
-Öncelikli yapılacaklar:
+Projenin mevcut aşamasında kütüphane yönetim sisteminin temel backend yapısı büyük ölçüde tamamlanmıştır.
 
-1. Loan iş kurallarının tamamlanması
-2. Fine/Ceza modülünün eklenmesi
-3. Member ve Book silme kurallarının güçlendirilmesi
-4. Listeleme endpointlerine pagination ve sorting eklenmesi
-5. Swagger/OpenAPI entegrasyonu
-6. Unit test ve integration test yazılması
-7. PostgreSQL profili ve Docker desteğinin eklenmesi
-8. JWT authentication ve role bazlı authorization geliştirilmesi
+Tamamlanan başlıca geliştirmeler:
+
+- Spring Boot proje yapısı oluşturuldu.
+- Katmanlı mimari yapısı kuruldu.
+    - Controller
+    - Service
+    - Repository
+    - Entity
+    - DTO
+- Book modülü geliştirildi.
+    - Kitap ekleme
+    - Kitap listeleme
+    - Kitap güncelleme
+    - Kitap silme
+- Member modülü geliştirildi.
+    - Üye ekleme
+    - Üye listeleme
+    - Üye güncelleme
+    - Üye silme
+- Loan modülü geliştirildi.
+    - Kitap ödünç verme
+    - Kitap iade alma
+    - Aktif ödünç kayıtlarını yönetme
+- Exception handling yapısı eklendi.
+    - Not found hataları
+    - Bad request hataları
+    - Global hata yönetimi
+- H2 veritabanı ve H2 Console yapılandırıldı.
+- SecurityConfig ile geliştirme ortamına uygun temel güvenlik ayarları yapıldı.
+- README dosyası düzenlendi.
+- Loan iş kuralları eklendi.
+    - Bir üye aynı anda en fazla 3 kitap ödünç alabilir.
+    - Üye elinde bulunan aynı kitabı tekrar ödünç alamaz.
+    - Ödenmemiş cezası olan üye yeni kitap ödünç alamaz.
+- Member silme kuralı eklendi.
+    - İade edilmemiş kitabı bulunan üye silinemez.
+- Book silme kuralı eklendi.
+    - Ödünçte kopyası bulunan kitap silinemez.
