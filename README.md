@@ -68,11 +68,13 @@ Projede şu modüller bulunmaktadır:
 - Merkezi hata yönetimi
 - Validation yapısı
 - README dokümantasyonu
+- - Fine/Ceza modülü
+- - Faz 2 iş kurallarının tamamlanması
 
 Henüz geliştirilmesi planlanan bölümler:
 
-- Fine/Ceza modülü
-- Faz 2 iş kurallarının tamamlanması
+
+
 - Pagination ve sorting desteği
 - Swagger/OpenAPI dokümantasyonu
 - Unit test ve integration testler
