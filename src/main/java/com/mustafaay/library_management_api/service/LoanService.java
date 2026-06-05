@@ -11,12 +11,15 @@ import com.mustafaay.library_management_api.exception.BadRequestException;
 import com.mustafaay.library_management_api.exception.ResourceNotFoundException;
 import com.mustafaay.library_management_api.mapper.LoanMapper;
 import com.mustafaay.library_management_api.repository.BookRepository;
+import com.mustafaay.library_management_api.repository.FineRepository;
 import com.mustafaay.library_management_api.repository.LoanRepository;
 import com.mustafaay.library_management_api.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.mustafaay.library_management_api.entity.Fine;
 
+import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -31,6 +34,7 @@ public class LoanService {
     private final BookRepository bookRepository;
     private final MemberRepository memberRepository;
     private final LoanMapper loanMapper;
+    private final FineRepository fineRepository;
 
     private static final BigDecimal DAILY_FINE_AMOUNT = BigDecimal.valueOf(2);
     private static final int MAX_ACTIVE_LOAN_COUNT = 3;
@@ -55,17 +59,19 @@ public class LoanService {
             throw new BadRequestException("Teslim tarihi geçmiş kitabı olan üye yeni kitap alamaz - Önce kitabı iade etmeli.");
         }
         //ödenmemiş cezası olan üye kitap alamaz.
-            if(loanRepository.existsByMemberIdAndFineAmountGreaterThanAndFinePaidFalse(memberId,BigDecimal.ZERO)){
+            if(fineRepository.existsByMemberIdAndPaidFalseAndAmountGreaterThan(memberId, BigDecimal.ZERO)){
                 throw new BadRequestException("Üyenin ödenmemiş cezası var. Ceza ödenmeden yeni kitap alınamaz.");
             }
 
         //bir üye aynı anda en fazla 3 kitap ödünç alabilir
-        if(loanRepository.countByMemberIdAndReturnDateIsNull(memberId)>=MAX_ACTIVE_LOAN_COUNT){
-            throw new BadRequestException("Bir üye aynı anda en fazla 3 kitap ödünç alabilir.");
+        long activeLoanCount = loanRepository.countByMemberIdAndStatus(memberId, LoanStatus.BORROWED);
 
+        if (activeLoanCount >= 3) {
+            throw new BadRequestException("Bir üye aynı anda en fazla 3 kitap ödünç alabilir.");
         }
+
         //Üye elinde zaten olan aynı kitabı tekrar alamaz.
-        if(loanRepository.existsByMemberIdAndBookIdAndReturnDateIsNull(memberId, bookId)){
+        if(loanRepository.existsByMemberIdAndBookIdAndStatus(memberId, bookId, LoanStatus.BORROWED)){
             throw new BadRequestException("Bu kitap şuan üyede mevcut");
         }
 
@@ -216,6 +222,17 @@ public class LoanService {
 
         if (fineAmount.compareTo(BigDecimal.ZERO) > 0) {
             loan.setFinePaid(false);
+
+            Fine fine = Fine.builder()
+                    .member(loan.getMember())
+                    .loan(loan)
+                    .amount(fineAmount)
+                    .paid(false)
+                    .reason("Geç iade cezası")
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            fineRepository.save(fine);
         } else {
             loan.setFinePaid(true);
         }
@@ -268,6 +285,12 @@ public class LoanService {
         }
 
         loan.setFinePaid(true);
+
+        Fine fine = fineRepository.findByLoanId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bu ödünç kaydına ait ceza kaydı bulunamadı."));
+
+        fine.setPaid(true);
+        fine.setPaidAt(LocalDateTime.now());
 
         Loan updatedLoan = loanRepository.save(loan);
 
