@@ -12,6 +12,8 @@ import com.mustafaay.library_management_api.repository.FineRepository;
 import com.mustafaay.library_management_api.repository.LoanRepository;
 import com.mustafaay.library_management_api.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,15 +61,13 @@ public class FineService {
     }
 
     //üyenin tüm cezalarını getirir
-    public List<FineResponse> getFinesByMemberId(Long memberId) {
+    public Page<FineResponse> getFinesByMemberId(Long memberId, Pageable pageable) {
 
         memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Üye bulunamadı."));
 
-        return fineRepository.findByMemberId(memberId)
-                .stream()
-                .map(this::mapToFineResponse)
-                .toList();
+        return fineRepository.findByMemberId(memberId, pageable)
+                .map(this::mapToFineResponse);
     }
 
     //üyenin sadece ödenmemiş cezalarını getirir

@@ -7,6 +7,8 @@ import com.mustafaay.library_management_api.repository.BookRepository;
 import com.mustafaay.library_management_api.service.BookService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,9 +37,14 @@ public class BookController {
     }
 
     @GetMapping(path = "/list")
-    public ResponseEntity<List<BookResponse>> getAllBooks() {
+    public ResponseEntity<Page<BookResponse>> getAllBooks(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String status,
+            Pageable pageable
+    ) {
 
-        List<BookResponse> books = bookService.getAllBooks();
+        Page<BookResponse> books = bookService.getAllBooks(q, category,status, pageable);
 
         return ResponseEntity.ok(books);
     }

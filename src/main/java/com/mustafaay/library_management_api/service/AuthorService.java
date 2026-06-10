@@ -2,9 +2,11 @@ package com.mustafaay.library_management_api.service;
 
 import com.mustafaay.library_management_api.entity.Author;
 import com.mustafaay.library_management_api.repository.AuthorRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+
 
 @Service
 public class AuthorService {
@@ -19,8 +21,8 @@ public class AuthorService {
         return authorRepository.save(author);
     }
 
-    public List<Author> getAllAuthors() {
-        return authorRepository.findAll();
+    public Page<Author> getAllAuthors(Pageable pageable) {
+        return authorRepository.findAll(pageable);
     }
 
     public Author getAuthorById(Long id) {

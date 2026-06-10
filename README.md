@@ -422,13 +422,33 @@ Tamamlanan başlıca geliştirmeler:
     - Üye listeleme
     - Üye güncelleme
     - Üye silme
+- Author modülü geliştirildi.
+    - Yazar ekleme
+    - Yazar listeleme
+    - Yazar detay görüntüleme
+    - Yazar silme
+- Category modülü geliştirildi.
+    - Kategori ekleme
+    - Kategori listeleme
+    - Kategori detay görüntüleme
+    - Kategori silme
 - Loan modülü geliştirildi.
     - Kitap ödünç verme
     - Kitap iade alma
     - Aktif ödünç kayıtlarını yönetme
+    - Üyeye ait ödünç geçmişini listeleme
+    - Gecikmiş ödünç kayıtlarını listeleme
+    - Tarihi geçmiş ödünç kayıtlarını overdue durumuna güncelleme
+- Fine modülü geliştirildi.
+    - Geç iade cezası oluşturma
+    - Üyeye ait ceza kayıtlarını listeleme
+    - Üyenin toplam borcunu görüntüleme
+    - Ceza ödeme işlemi
+    - Ceza ödendiğinde hem `LOANS.FINE_PAID` hem de `FINES.PAID` alanlarının güncellenmesi
 - Exception handling yapısı eklendi.
     - Not found hataları
     - Bad request hataları
+    - Validation hataları
     - Global hata yönetimi
 - H2 veritabanı ve H2 Console yapılandırıldı.
 - SecurityConfig ile geliştirme ortamına uygun temel güvenlik ayarları yapıldı.
@@ -441,3 +461,23 @@ Tamamlanan başlıca geliştirmeler:
     - İade edilmemiş kitabı bulunan üye silinemez.
 - Book silme kuralı eklendi.
     - Ödünçte kopyası bulunan kitap silinemez.
+- Pagination ve sorting desteği eklendi.
+    - Listeleme endpointleri `Page` formatına dönüştürüldü.
+    - `Pageable` desteği eklendi.
+    - Sayfa numarası, sayfa boyutu ve sıralama parametreleri desteklenir hale getirildi.
+    - API cevaplarında `content`, `totalElements`, `totalPages`, `size`, `number` gibi pagination alanları dönmeye başladı.
+- Aşağıdaki endpointlerde pagination ve sorting desteği test edildi:
+    - `GET /api/books/list?page=0&size=2&sort=title,asc`
+    - `GET /api/members/list?page=0&size=2&sort=firstName,asc`
+    - `GET /api/authors/list?page=0&size=2&sort=firstName,asc`
+    - `GET /api/categories/list?page=0&size=2&sort=name,asc`
+    - `GET /api/loans/list?page=0&size=2&sort=loanDate,desc`
+    - `GET /api/loans/member/1?page=0&size=2&sort=loanDate,desc`
+    - `GET /api/loans/overdue?page=0&size=2&sort=dueDate,asc`
+    - `GET /api/fines/member/1?page=0&size=2&sort=createdAt,desc`
+- Kitap listeleme için gelişmiş arama ve filtreleme altyapısı hazırlandı.
+    - Başlığa göre arama
+    - Yazara göre arama
+    - Kategoriye göre filtreleme
+    - Kitap durumuna göre filtreleme
+    - Pagination ve sorting ile birlikte kullanım

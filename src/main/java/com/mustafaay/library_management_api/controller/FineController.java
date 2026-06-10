@@ -5,6 +5,8 @@ import com.mustafaay.library_management_api.dto.response.FineResponse;
 import com.mustafaay.library_management_api.dto.response.MemberFineTotalResponse;
 import com.mustafaay.library_management_api.service.FineService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,8 +26,8 @@ public class FineController {
 
     //üyenin tüm cezalarını listeler
     @GetMapping(path = "/member/{memberId}")
-    public List<FineResponse> getFinesByMemberId(@PathVariable Long memberId) {
-        return fineService.getFinesByMemberId(memberId);
+    public Page<FineResponse> getFinesByMemberId(@PathVariable Long memberId, Pageable pageable) {
+        return fineService.getFinesByMemberId(memberId, pageable);
     }
 
     //üyenin sadece ödenmemiş cezalarını listeler

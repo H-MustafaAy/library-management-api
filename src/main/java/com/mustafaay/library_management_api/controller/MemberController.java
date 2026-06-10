@@ -6,6 +6,8 @@ import com.mustafaay.library_management_api.dto.response.MemberResponse;
 import com.mustafaay.library_management_api.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,8 +29,8 @@ public class MemberController {
 
     //tüm üyeleri listeler
     @GetMapping(path = "/list")
-    public List<MemberResponse> getAllMembers() {
-        return memberService.getAllMembers();
+    public Page<MemberResponse> getAllMembers(Pageable pageable) {
+        return memberService.getAllMembers(pageable);
     }
 
     //id ile üye listeleme

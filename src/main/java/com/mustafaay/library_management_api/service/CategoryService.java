@@ -2,9 +2,10 @@ package com.mustafaay.library_management_api.service;
 
 import com.mustafaay.library_management_api.entity.Category;
 import com.mustafaay.library_management_api.repository.CategoryRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 
 @Service
 public class CategoryService {
@@ -19,8 +20,8 @@ public class CategoryService {
         return categoryRepository.save(category);
     }
 
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public Page<Category> getAllCategories(Pageable pageable) {
+        return categoryRepository.findAll(pageable);
     }
 
     public Category getCategoryById(Long id) {

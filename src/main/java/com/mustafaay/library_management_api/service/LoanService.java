@@ -15,6 +15,8 @@ import com.mustafaay.library_management_api.repository.FineRepository;
 import com.mustafaay.library_management_api.repository.LoanRepository;
 import com.mustafaay.library_management_api.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.mustafaay.library_management_api.entity.Fine;
@@ -109,12 +111,10 @@ public class LoanService {
 
     //veritabanından bütün loan kayıtlarını getirir.
     @Transactional(readOnly = true)
-    public List<LoanResponse> getAllLoans(){
+    public Page<LoanResponse> getAllLoans(Pageable pageable){
 
-        List<LoanResponse> responses = loanRepository.findAll()
-                .stream()
-                .map(loanMapper::toResponse)
-                .toList();
+        Page<LoanResponse> responses = loanRepository.findAll(pageable)
+                .map(loanMapper::toResponse);
        return responses;
     }
     //id ile ödünç kaydı döndürme
@@ -130,14 +130,10 @@ public class LoanService {
 
     //üye id sine göre ödünç kaydı getirme
     @Transactional(readOnly = true)
-    public List<LoanResponse> getLoansByMemberId(Long memberId) {
+    public Page<LoanResponse> getLoansByMemberId(Long memberId, Pageable pageable) {
 
-        List<LoanResponse> responses = loanRepository.findByMemberId(memberId)
-                .stream()
-                .map(loanMapper::toResponse)
-                .toList();
-
-        return responses;
+        return loanRepository.findByMemberId(memberId, pageable)
+                .map(loanMapper::toResponse);
     }
     //kitap id sine göre ödünç kaydı getirme
     @Transactional(readOnly = true)
@@ -183,15 +179,30 @@ public class LoanService {
 
     //süresi geçmiş ödünçleri getirir
     @Transactional(readOnly = true)
-    public List<LoanResponse> getOverdueLoans() {
+    public Page<LoanResponse> getOverdueLoans(Pageable pageable) {
 
-        return loanRepository.findByDueDateBeforeAndStatus(
-                        LocalDate.now(),
-                        LoanStatus.BORROWED
-                )
-                .stream()
-                .map(loanMapper::toResponse)
-                .toList();
+        return loanRepository.findByStatus(LoanStatus.OVERDUE,pageable)
+                .map(loanMapper::toResponse);
+    }
+
+    @Transactional
+    public void updateOverdueLoans() {
+
+        LocalDate today = LocalDate.now();
+
+        //teslim tarihi geçmiş ama hala BORROWED olan kayıtları bulur
+        List<Loan> overdueLoans = loanRepository.findByDueDateBeforeAndStatus(
+                today,
+                LoanStatus.BORROWED
+        );
+
+        //her bir kaydın durumunu OVERDUE yap
+        for (Loan loan : overdueLoans) {
+            loan.setStatus(LoanStatus.OVERDUE);
+        }
+
+        //güncellenen kayıtları veritabanına kaydet
+        loanRepository.saveAll(overdueLoans);
     }
 
     @Transactional

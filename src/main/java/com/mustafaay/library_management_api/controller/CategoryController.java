@@ -2,9 +2,11 @@ package com.mustafaay.library_management_api.controller;
 
 import com.mustafaay.library_management_api.entity.Category;
 import com.mustafaay.library_management_api.service.CategoryService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/categories")
@@ -21,9 +23,9 @@ public class CategoryController {
         return categoryService.createCategory(category);
     }
 
-    @GetMapping
-    public List<Category> getAllCategories() {
-        return categoryService.getAllCategories();
+    @GetMapping(path = "/list")
+    public Page<Category> getAllCategories(Pageable pageable) {
+        return categoryService.getAllCategories(pageable);
     }
 
     @GetMapping(path = "/{id}")

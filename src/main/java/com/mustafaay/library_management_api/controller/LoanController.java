@@ -6,6 +6,8 @@ import com.mustafaay.library_management_api.enums.LoanStatus;
 import com.mustafaay.library_management_api.service.LoanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,8 +29,8 @@ public class LoanController {
 
     //tüm loanları getirir.
     @GetMapping(path = "/list")
-    public List<LoanResponse> getAllLoan(){
-        return loanService.getAllLoans();
+    public Page<LoanResponse> getAllLoan(Pageable pageable){
+        return loanService.getAllLoans(pageable);
     }
     // sadece id numarası verilen loan ı getirir.
     @GetMapping(path = "/list/{id}")
@@ -37,11 +39,13 @@ public class LoanController {
     }
 
     //ÜYE id sine göre ödünç kaydı getirir
-    @GetMapping(path = "/member/{memberId}")
-    public List<LoanResponse> getLoansByMemberId(@PathVariable Long memberId){
-        return loanService.getLoansByMemberId(memberId);
+    @GetMapping("/member/{memberId}")
+    public Page<LoanResponse> getLoansByMemberId(
+            @PathVariable Long memberId,
+            Pageable pageable
+    ) {
+        return loanService.getLoansByMemberId(memberId, pageable);
     }
-
     //kitab id ye göre ödünç kaydı getirir
     @GetMapping(path = "/book/{bookId}")
     public List<LoanResponse> getLoansByBookId(@PathVariable Long bookId){
@@ -66,8 +70,8 @@ public class LoanController {
     }
     //süresi geçmiş ödünç kayıtlarını listeler
     @GetMapping("/overdue")
-    public List<LoanResponse> getOverdueLoans() {
-        return loanService.getOverdueLoans();
+    public Page<LoanResponse> getOverdueLoans(Pageable pageable) {
+        return loanService.getOverdueLoans(pageable);
     }
 
     //kitap iade işlemi
@@ -88,5 +92,14 @@ public class LoanController {
         LoanResponse response = loanService.payFine(id);
 
         return ResponseEntity.ok(response);
+    }
+
+    // teslimat tarihi geçen loanları güncellemek için.
+    @PatchMapping("/update-overdue")
+    public ResponseEntity<String> updateOverdueLoans() {
+
+        loanService.updateOverdueLoans();
+
+        return ResponseEntity.ok("Teslim tarihi geçen ödünç kayıtları OVERDUE olarak güncellendi.");
     }
 }

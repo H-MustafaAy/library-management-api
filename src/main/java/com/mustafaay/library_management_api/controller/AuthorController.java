@@ -2,9 +2,11 @@ package com.mustafaay.library_management_api.controller;
 
 import com.mustafaay.library_management_api.entity.Author;
 import com.mustafaay.library_management_api.service.AuthorService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/authors")
@@ -21,9 +23,9 @@ public class AuthorController {
         return authorService.createAuthor(author);
     }
 
-    @GetMapping
-    public List<Author> getAllAuthors() {
-        return authorService.getAllAuthors();
+    @GetMapping(path = "/list")
+    public Page<Author> getAllAuthors(Pageable pageable) {
+        return authorService.getAllAuthors(pageable);
     }
 
     @GetMapping("/{id}")

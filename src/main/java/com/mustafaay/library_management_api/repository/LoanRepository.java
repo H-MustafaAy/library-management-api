@@ -2,6 +2,8 @@ package com.mustafaay.library_management_api.repository;
 
 import com.mustafaay.library_management_api.entity.Loan;
 import com.mustafaay.library_management_api.enums.LoanStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.math.BigDecimal;
@@ -23,6 +25,9 @@ public interface LoanRepository extends JpaRepository<Loan,Long> {
     //son teslim tarihi geçmiş , iade edilmemiş ödünçleri getirir
     List<Loan> findByDueDateBeforeAndStatus(LocalDate date, LoanStatus status);
 
+
+    Page<Loan> findByStatus(LoanStatus status, Pageable pageable);
+
     //üyeleri silmeden önce bu kontrol yapılmalı
     //üyenin iade edilmemiş kitabı var mı
     boolean existsByMemberIdAndReturnDateIsNull(Long memberId);
@@ -39,4 +44,6 @@ public interface LoanRepository extends JpaRepository<Loan,Long> {
 
     //aynı kitabın aynı üyede aktif olarak bulunup bulunmadığını kontrol eder
     boolean existsByMemberIdAndBookIdAndStatus(Long memberId, Long bookId, LoanStatus status);
+
+    Page<Loan> findByMemberId(Long memberId, Pageable pageable);
 }

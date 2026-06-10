@@ -10,10 +10,14 @@ import com.mustafaay.library_management_api.repository.AuthorRepository;
 import com.mustafaay.library_management_api.repository.BookRepository;
 import com.mustafaay.library_management_api.repository.CategoryRepository;
 import com.mustafaay.library_management_api.repository.LoanRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.mustafaay.library_management_api.exception.BadRequestException;
 import com.mustafaay.library_management_api.exception.ResourceNotFoundException;
+
+
 
 import java.util.List;
 import java.util.Set;
@@ -85,12 +89,29 @@ public class BookService {
 
     //tüm kitapları getirmek için
     @Transactional(readOnly = true)
-    public List<BookResponse> getAllBooks() {
+    public Page<BookResponse> getAllBooks(String q, String category, String status, Pageable pageable) {
 
-        return bookRepository.findAll()
-                .stream()
-                .map(this::mapToBookResponse)
-                .collect(Collectors.toList());
+        return bookRepository.searchBooks(
+                        normalize(q),
+                        normalize(category),
+                        normalizeStatus(status),
+                        pageable
+                )
+                .map(this::mapToBookResponse);
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        return status.trim().toUpperCase();
     }
 
     // sadece istediğimiz idye sahip kitabı listelemek için

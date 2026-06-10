@@ -12,6 +12,8 @@ import com.mustafaay.library_management_api.mapper.MemberMapper;
 import com.mustafaay.library_management_api.repository.LoanRepository;
 import com.mustafaay.library_management_api.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,11 +47,9 @@ public class MemberService {
 
     //TÜM ÜYELERİ LİSTELEME
     @Transactional(readOnly = true)
-    public List<MemberResponse> getAllMembers() {
-        List<MemberResponse> allMembers = memberRepository.findAll()
-                .stream()
-                .map(memberMapper::toResponse)
-                .toList();
+    public Page<MemberResponse> getAllMembers(Pageable pageable) {
+        Page<MemberResponse> allMembers = memberRepository.findAll(pageable)
+                .map(memberMapper::toResponse);
         return allMembers;
     }
 
