@@ -22,6 +22,11 @@ public class CreateMemberRequest {
     @Email(message = "Geçerli bir email adresi giriniz")
     private String email;
 
+    //faz 4 için ekledim - security - login
+    @NotBlank(message = "Şifre boş olamaz.")
+    @Size(min = 6,message = "Şifre en az 6 karakter olmalıdır.")
+    private String password;
+
     @NotBlank(message = "Telefon numarası boş bırakılamaz")
     @Pattern(
             regexp = "^[0-9]{10}$",

@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,17 @@ public class MemberController {
     public MemberResponse createMember(@Valid @RequestBody CreateMemberRequest request) {
 
         return memberService.createMember(request);
+    }
+
+    // Librarian oluşturma
+    @PostMapping("/create-librarian")
+    public ResponseEntity<MemberResponse> createLibrarian(@RequestBody CreateMemberRequest request) {
+        return ResponseEntity.ok(memberService.createLibrarian(request));
+    }
+    //admin oluşturma
+    @PostMapping("/create-admin")
+    public ResponseEntity<MemberResponse> createAdmin(@RequestBody CreateMemberRequest request) {
+        return ResponseEntity.ok(memberService.createAdmin(request));
     }
 
     //tüm üyeleri listeler

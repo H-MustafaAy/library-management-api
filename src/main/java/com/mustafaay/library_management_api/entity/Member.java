@@ -30,6 +30,9 @@ public class Member {
     private String email;
 
     @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
     private String phoneNumber;
 
 
@@ -48,6 +51,8 @@ public class Member {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+
 
     @PrePersist
     public void prePersist() {

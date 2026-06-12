@@ -6,6 +6,7 @@ import com.mustafaay.library_management_api.dto.request.UpdateMemberRequest;
 import com.mustafaay.library_management_api.dto.response.MemberResponse;
 import com.mustafaay.library_management_api.entity.Member;
 import com.mustafaay.library_management_api.enums.MemberStatus;
+import com.mustafaay.library_management_api.enums.Role;
 import com.mustafaay.library_management_api.exception.BadRequestException;
 import com.mustafaay.library_management_api.exception.ResourceNotFoundException;
 import com.mustafaay.library_management_api.mapper.MemberMapper;
@@ -14,6 +15,7 @@ import com.mustafaay.library_management_api.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final MemberMapper memberMapper;
     private final LoanRepository loanRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public MemberResponse createMember(CreateMemberRequest request) {
 
@@ -37,6 +40,9 @@ public class MemberService {
         //gelen CreateMemberRequesti veritabanına kayıt için gerekli member türüne çevirdim
         // membermapper daki methodumu kullandım
         Member member = memberMapper.toEntity(request);
+
+        member.setPassword(passwordEncoder.encode(request.getPassword()));
+
         //veritabanıa kayıt ettim
         Member savedMember = memberRepository.save(member);
 
@@ -147,5 +153,50 @@ public class MemberService {
     private Member findMemberById(Long id) {
         return memberRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Üye bulunamadı"));
+    }
+    // librarian oluşturma
+    public MemberResponse createLibrarian(CreateMemberRequest request) {
+
+        if (memberRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("Bu email zaten kullanılıyor");
+        }
+
+        Member member = Member.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phoneNumber(request.getPhoneNumber())
+                .address(request.getAddress())
+                .status(MemberStatus.ACTIVE)
+                .role(Role.LIBRARIAN)
+                .build();
+
+        Member savedMember = memberRepository.save(member);
+
+        return memberMapper.toResponse(savedMember);
+    }
+
+    //admin oluşturma
+    public MemberResponse createAdmin(CreateMemberRequest request) {
+
+        if (memberRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("Bu email zaten kullanılıyor");
+        }
+
+        Member member = Member.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phoneNumber(request.getPhoneNumber())
+                .address(request.getAddress())
+                .status(MemberStatus.ACTIVE)
+                .role(Role.ADMIN)
+                .build();
+
+        Member savedMember = memberRepository.save(member);
+
+        return memberMapper.toResponse(savedMember);
     }
 }
